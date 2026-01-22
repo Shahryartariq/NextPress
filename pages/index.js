@@ -1,6 +1,13 @@
+import HeroSection from '../components/home-page/hero'
+import FeaturedPosts from '../components/home-page/featured-posts'
+
+
 const Homepage = () => {
   return (
-    <div>Homepage</div>
+    <>
+      <HeroSection />
+      <FeaturedPosts />
+    </>
   )
 }
 
