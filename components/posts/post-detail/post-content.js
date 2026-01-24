@@ -1,10 +1,10 @@
-import ReactMarkdown from 'react-markdown';
-import Image from 'next/image';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+import ReactMarkdown from "react-markdown";
+import Image from "next/image";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { atomDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
 
-import PostHeader from './post-header';
-import classes from './post-content.module.css';
+import PostHeader from "./post-header";
+import classes from "./post-content.module.css";
 
 function PostContent(props) {
   const { post } = props;
@@ -12,47 +12,24 @@ function PostContent(props) {
   const imagePath = `/images/posts/${post.slug}/${post.image}`;
 
   const customRenderers = {
-    img(image) {
-      return (
-        <Image
-          src={`/images/posts/${post.slug}/${image.src}`}
-          alt={image.alt}
-          width={600}
-          height={300}
-        />
-      );
+    img({ src, alt }) {
+      const imageSrc = src.startsWith("/") ? src : `/images/posts/${post.slug}/${src}`;
+
+      return <Image src={imageSrc} alt={alt} width={600} height={300} className={classes.image} />;
     },
-    p(paragraph) {
-      const { node } = paragraph;
 
-      if (node.children[0].tagName === 'img') {
-        const image = node.children[0];
+    code({ inline, className, children }) {
+      const match = /language-(\w+)/.exec(className || "");
 
+      if (!inline && match) {
         return (
-          <div className={classes.image}>
-            <Image
-              src={`/images/posts/${post.slug}/${image.properties.src}`}
-              alt={image.alt}
-              width={600}
-              height={300}
-            />
-          </div>
+          <SyntaxHighlighter style={atomDark} language={match[1]} PreTag="div">
+            {String(children).replace(/\n$/, "")}
+          </SyntaxHighlighter>
         );
       }
 
-      return <p>{paragraph.children}</p>;
-    },
-
-    code(code) {
-      const { className, children } = code;
-      const language = className.split('-')[1]; // className is something like language-js => We need the "js" part here
-      return (
-        <SyntaxHighlighter
-          style={atomDark}
-          language={language}
-          children={children}
-        />
-      );
+      return <code className={className}>{children}</code>;
     },
   };
 
