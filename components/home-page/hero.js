@@ -11,7 +11,7 @@ const HeroSection = () => {
             alt="An image showing Sherry"
             width={300}
             height={300}
-            priority
+            priority={true}
           />
       </div>
       <h1>Hi, I'm Sherry</h1>

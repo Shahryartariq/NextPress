@@ -1,10 +1,22 @@
 import ReactMarkdown from "react-markdown";
 import Image from "next/image";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { atomDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
+import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
+import atomDark from "react-syntax-highlighter/dist/cjs/styles/prism/atom-dark";
+import js from "react-syntax-highlighter/dist/cjs/languages/prism/javascript";
+import css from "react-syntax-highlighter/dist/cjs/languages/prism/css";
+import python from "react-syntax-highlighter/dist/cjs/languages/prism/python";
+import Html from "react-syntax-highlighter/dist/cjs/languages/prism/markup";
+import cpp from "react-syntax-highlighter/dist/cjs/languages/prism/cpp";
+
 
 import PostHeader from "./post-header";
 import classes from "./post-content.module.css";
+
+SyntaxHighlighter.registerLanguage("javascript", js);
+SyntaxHighlighter.registerLanguage("css", css);
+SyntaxHighlighter.registerLanguage("python", python);
+SyntaxHighlighter.registerLanguage("html", Html);
+SyntaxHighlighter.registerLanguage("cpp", cpp);
 
 function PostContent(props) {
   const { post } = props;
