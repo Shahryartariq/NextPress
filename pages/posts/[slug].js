@@ -1,11 +1,18 @@
-import PostContent from "../../components/posts/post-detail/post-content"
+import Head from "next/head";
+import PostContent from "../../components/posts/post-detail/post-content";
 import { getPostData, getPostsFiles } from "../../lib/posts-util";
 
 const DetailedPostPage = (props) => {
   return (
-    <PostContent post={props.post} />
-  )
-}
+    <>
+      <Head>
+        <title>{props.post.title + " | NextPress Blog"}</title>
+        <meta name="description" content={props.post.excerpt} />
+      </Head>
+      <PostContent post={props.post} />
+    </>
+  );
+};
 
 export function getStaticProps(context) {
   const { params } = context;
@@ -14,10 +21,10 @@ export function getStaticProps(context) {
   const postData = getPostData(slug);
   return {
     props: {
-      post: postData
+      post: postData,
     },
-    revalidate: 600
-  }
+    revalidate: 600,
+  };
 }
 
 export function getStaticPaths() {
@@ -27,8 +34,8 @@ export function getStaticPaths() {
 
   return {
     paths: slugs.map((slug) => ({ params: { slug: slug } })),
-    fallback: false
-  }
+    fallback: false,
+  };
 }
 
-export default DetailedPostPage
+export default DetailedPostPage;

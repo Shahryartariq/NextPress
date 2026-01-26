@@ -1,9 +1,16 @@
-import ContactForm from "../components/contact/contact-form"
+import ContactForm from "../components/contact/contact-form";
+import Head from "next/head";
 
 const ContactPage = () => {
   return (
-    <ContactForm />
-  )
-}
+    <>
+      <Head>
+        <title>Contact Me | Sherry's Blog</title>
+        <meta name="description" content="Send me a message!" />
+      </Head>
+      <ContactForm />
+    </>
+  );
+};
 
-export default ContactPage
+export default ContactPage;
