@@ -16,6 +16,9 @@ const MainNavigation = () => {
           <li>
             <Link href="/contact">Contact</Link>
           </li>
+          <li>
+            <Link href="/auth/login">Login</Link>
+          </li>
         </ul>
       </nav>
     </header>
