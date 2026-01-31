@@ -36,8 +36,6 @@ function AuthForm() {
     const enteredEmail = emailInputRef.current.value;
     const enteredPassword = passwordInputRef.current.value;
 
-    // Optional: Add validation
-
     if (isLogin) {
       const result = await signIn('credentials', {
         redirect: false,
@@ -47,12 +45,15 @@ function AuthForm() {
       
       console.log(result);
       if(!result.error){
-        // Logged in
+        window.location.href = '/posts';
       }
     } else {
       try{
         const result = await createUser(enteredEmail, enteredPassword);
         console.log(result);
+        if(result){
+          window.location.href = '/auth/login';
+        }
       } catch (error) {
         console.log(error);
       }
