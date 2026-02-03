@@ -26,60 +26,102 @@ function AuthForm() {
   const passwordInputRef = useRef();
 
   const [isLogin, setIsLogin] = useState(true);
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
   const router = useRouter();
 
   function switchAuthModeHandler() {
-    setIsLogin((prevState) => !prevState);
+    if (isLoading) return;
+    setIsLogin((prev) => !prev);
+    setError(null);
   }
 
   async function submitHandler(event) {
     event.preventDefault();
+    setError(null);
+    setIsLoading(true);
 
     const enteredEmail = emailInputRef.current.value;
     const enteredPassword = passwordInputRef.current.value;
 
-    if (isLogin) {
-      const result = await signIn('credentials', {
-        redirect: false,
-        email: enteredEmail,
-        password: enteredPassword,
-      });
-      
-      console.log(result);
-      if(!result.error){
-        router.replace('/posts');
-      }
-    } else {
-      try{
-        const result = await createUser(enteredEmail, enteredPassword);
-        console.log(result);
-        if(result){
-          window.location.href = '/auth/login';
+    if (!enteredEmail || !enteredPassword) {
+      setError('Email and password are required.');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      if (isLogin) {
+        const result = await signIn('credentials', {
+          redirect: false,
+          email: enteredEmail,
+          password: enteredPassword,
+        });
+
+        if (result.error) {
+          setError('Invalid email or password.');
+          setIsLoading(false);
+          return;
         }
-      } catch (error) {
-        console.log(error);
+
+        router.replace('/posts');
+      } else {
+        await createUser(enteredEmail, enteredPassword);
+        router.push('/auth/login');
       }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
     }
   }
 
   return (
     <section className={classes.auth}>
       <h1>{isLogin ? 'Login' : 'Sign Up'}</h1>
+
+      {error && <p className={classes.error}>{error}</p>}
+
       <form onSubmit={submitHandler}>
         <div className={classes.control}>
-          <label htmlFor='email'>Your Email</label>
-          <input type='email' id='email' required ref={emailInputRef} />
+          <label htmlFor="email">Your Email</label>
+          <input
+            type="email"
+            id="email"
+            required
+            ref={emailInputRef}
+            disabled={isLoading}
+          />
         </div>
+
         <div className={classes.control}>
-          <label htmlFor='password'>Your Password</label>
-          <input type='password' id='password' required ref={passwordInputRef} />
+          <label htmlFor="password">Your Password</label>
+          <input
+            type="password"
+            id="password"
+            required
+            ref={passwordInputRef}
+            disabled={isLoading}
+          />
         </div>
+
         <div className={classes.actions}>
-          <button>{isLogin ? 'Login' : 'Create Account'}</button>
+          <button disabled={isLoading}>
+            {isLoading
+              ? isLogin
+                ? 'Logging in...'
+                : 'Creating account...'
+              : isLogin
+              ? 'Login'
+              : 'Create Account'}
+          </button>
+
           <button
-            type='button'
+            type="button"
             className={classes.toggle}
             onClick={switchAuthModeHandler}
+            disabled={isLoading}
           >
             {isLogin ? 'Create new account' : 'Login with existing account'}
           </button>
