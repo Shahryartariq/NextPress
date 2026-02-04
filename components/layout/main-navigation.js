@@ -24,6 +24,9 @@ const MainNavigation = () => {
             <Link href="/posts">Posts</Link>
           </li>
           <li>
+            <Link href="/posts/create">Create Post</Link>
+          </li>
+          <li>
             <Link href="/contact">Contact</Link>
           </li>
            <li>
