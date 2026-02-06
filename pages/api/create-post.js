@@ -1,32 +1,33 @@
 import fs from "fs";
 import path from "path";
-import { generateMarkdown, generateSlug } from "@/lib/post-formatter";
+
+import { generateSlug, generateMarkdown } from "../../lib/post-formatter";
 
 export default function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method not allowed" });
+    return;
   }
 
   try {
-    const postData = req.body;
+    const { title, excerpt, content, image } = req.body;
 
-    const slug = generateSlug(postData.title);
-    const markdown = generateMarkdown(postData);
+    const slug = generateSlug(title);
 
-    const postsDir = path.join(process.cwd(), "posts");
+    const markdown = generateMarkdown({
+      title,
+      excerpt,
+      content,
+      image,
+      date: new Date().toISOString(),
+    });
 
-    if (!fs.existsSync(postsDir)) {
-      fs.mkdirSync(postsDir);
-    }
+    const filePath = path.join(process.cwd(), "posts", `${slug}.md`);
 
-    fs.writeFileSync(
-      path.join(postsDir, `${slug}.md`),
-      markdown
-    );
+    fs.writeFileSync(filePath, markdown);
 
-    res.status(200).json({ message: "Post created" });
-
+    res.status(201).json({ message: "Post created!" });
   } catch (error) {
-    res.status(500).json({ message: "Error creating post" });
+    console.error(error);
+    res.status(500).json({ message: "Error creating post", error: error.message });
   }
 }
