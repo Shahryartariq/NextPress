@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import classes from "./create-post.module.css";
-
+import { getTodayDate } from "../../../lib/helper/getTodayDate";
 const CreatePost = () => {
   const router = useRouter();
 
   const [formData, setFormData] = useState({
     title: "",
-    date: "",
+    date: getTodayDate(),
     image: "",
     excerpt: "",
     isFeatured: false,
@@ -60,7 +60,7 @@ const CreatePost = () => {
           name="date"
           required
           value={formData.date}
-          onChange={handleChange}
+          disabled
         />
 
         <input

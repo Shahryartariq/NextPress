@@ -23,25 +23,29 @@ const MainNavigation = () => {
           <li>
             <Link href="/posts">Posts</Link>
           </li>
-          <li>
-            <Link href="/posts/create">Create Post</Link>
-          </li>
+          {status === "authenticated" && (
+            <li>
+              <Link href="/posts/create">Create Post</Link>
+            </li>
+          )}
+
           <li>
             <Link href="/contact">Contact</Link>
           </li>
-           <li>
-            {status === "authenticated" && (
+          {status === "authenticated" && (
+            <li>
               <Link href="/profile">Profile</Link>
-            )}
-          </li>
+            </li>
+          )}
           <li>
             {status === "authenticated" ? (
-              <Link href="/auth/logout" onClick={logoutHandler}>Logout</Link>
+              <Link href="/auth/logout" onClick={logoutHandler}>
+                Logout
+              </Link>
             ) : (
               <Link href="/auth/login">Login</Link>
             )}
           </li>
-         
         </ul>
       </nav>
     </header>
