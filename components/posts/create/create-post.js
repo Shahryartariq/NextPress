@@ -2,20 +2,45 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import classes from "./create-post.module.css";
 import { getTodayDate } from "../../../lib/helper/getTodayDate";
+
 const CreatePost = () => {
   const router = useRouter();
 
   const [formData, setFormData] = useState({
     title: "",
     date: getTodayDate(),
-    image: "",
+    thumbnail: null,
     excerpt: "",
     isFeatured: false,
     content: "",
   });
 
+  const [preview, setPreview] = useState(null);
+
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value, type, checked, files } = e.target;
+
+    /* FILE UPLOAD */
+    if (type === "file") {
+      const file = files[0];
+
+      if (!file) return;
+
+      // Validate type
+      if (!["image/png", "image/jpeg"].includes(file.type)) {
+        alert("Only PNG or JPEG allowed");
+        return;
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        thumbnail: file,
+      }));
+
+      // Preview
+      setPreview(URL.createObjectURL(file));
+      return;
+    }
 
     setFormData((prev) => ({
       ...prev,
@@ -26,18 +51,25 @@ const CreatePost = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const response = await fetch("/api/create-post", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formData),
-    });
+    const submitData = new FormData();
 
-    if (response.ok) {
+    submitData.append("title", formData.title);
+    submitData.append("excerpt", formData.excerpt);
+    submitData.append("content", formData.content);
+    submitData.append("isFeatured", formData.isFeatured);
+    submitData.append("thumbnail", formData.thumbnail);
+
+    try {
+      const response = await fetch("/api/create-post", {
+        method: "POST",
+        body: submitData,
+      });
+
+      if (!response.ok) throw new Error();
+
       alert("Post created successfully!");
       router.push("/");
-    } else {
+    } catch {
       alert("Failed to create post");
     }
   };
@@ -47,6 +79,7 @@ const CreatePost = () => {
       <h1>Create Post</h1>
 
       <form onSubmit={handleSubmit} className={classes.form}>
+        {/* TITLE */}
         <input
           name="title"
           placeholder="Title"
@@ -55,21 +88,28 @@ const CreatePost = () => {
           onChange={handleChange}
         />
 
-        <input
-          type="date"
-          name="date"
-          required
-          value={formData.date}
-          disabled
-        />
+        {/* DATE (READ ONLY DISPLAY) */}
+        <input type="date" value={formData.date} disabled />
 
+        {/* THUMBNAIL */}
         <input
-          name="image"
-          placeholder="Image filename"
-          value={formData.image}
+          type="file"
+          name="thumbnail"
+          accept="image/png, image/jpeg"
+          required
           onChange={handleChange}
         />
 
+        {/* Preview */}
+        {preview && (
+          <img
+            src={preview}
+            alt="Preview"
+            className={classes.preview}
+          />
+        )}
+
+        {/* EXCERPT */}
         <input
           name="excerpt"
           placeholder="Excerpt"
@@ -77,6 +117,7 @@ const CreatePost = () => {
           onChange={handleChange}
         />
 
+        {/* FEATURED */}
         <label className={classes.checkbox}>
           Featured Post
           <input
@@ -87,6 +128,7 @@ const CreatePost = () => {
           />
         </label>
 
+        {/* CONTENT */}
         <textarea
           name="content"
           placeholder="Write markdown content..."
