@@ -1,7 +1,9 @@
 import fs from "fs";
 import path from "path";
 import formidable from "formidable";
+import { getToken } from "next-auth/jwt";
 
+import sql from "../../lib/db";
 import { generateSlug, generateMarkdown } from "../../lib/post-formatter";
 
 export const config = {
@@ -10,80 +12,131 @@ export const config = {
   },
 };
 
-export default function handler(req, res) {
-  if (req.method !== "POST") return;
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ message: "Method not allowed" });
+  }
 
-  const form = formidable({ multiples: false });
+  try {
+    /* --------------------------
+       GET USER FROM NEXTAUTH
+    -------------------------- */
 
-  form.parse(req, (err, fields, files) => {
-    if (err) {
-      return res.status(500).json({ message: "File upload error" });
+    const token = await getToken({
+      req,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
+
+    if (!token) {
+      return res.status(401).json({ message: "Not authenticated" });
     }
 
-    try {
-      const title = fields.title[0];
-      const excerpt = fields.excerpt[0];
-      const content = fields.content[0];
+    const email = token.email;
 
-      const slug = generateSlug(title);
+    /* --------------------------
+       CHECK USER STATUS
+    -------------------------- */
 
-      /* --------------------------
-         IMAGE STORAGE
-      -------------------------- */
+    const user = await sql`
+      SELECT status FROM users WHERE email = ${email}
+    `;
 
-      const uploadDir = path.join(
-        process.cwd(),
-        "public",
-        "images",
-        "posts",
-        slug
-      );
+    if (!user.length || user[0].status === false) {
+      return res.status(403).json({
+        message: "User not allowed to create post",
+      });
+    }
 
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
+    /* --------------------------
+       PARSE FORM DATA
+    -------------------------- */
+
+    const form = formidable({ multiples: false });
+
+    form.parse(req, async (err, fields, files) => {
+      if (err) {
+        return res.status(500).json({ message: "File upload error" });
       }
 
-      const file = files.thumbnail?.[0];
+      try {
+        const title = fields.title[0];
+        const excerpt = fields.excerpt[0];
+        const content = fields.content[0];
 
-      let imagePath = "";
+        const slug = generateSlug(title);
 
-      if (file) {
-        const ext = path.extname(file.originalFilename);
+        /* --------------------------
+           IMAGE STORAGE
+        -------------------------- */
 
-        if (![".png", ".jpg", ".jpeg"].includes(ext.toLowerCase())) {
-          return res.status(400).json({ message: "Only PNG or JPEG allowed" });
+        const uploadDir = path.join(
+          process.cwd(),
+          "public",
+          "images",
+          "posts",
+          slug
+        );
+
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
         }
 
-        const newFilePath = path.join(uploadDir, `${slug}${ext}`);
+        const file = files.thumbnail?.[0];
 
-        fs.copyFileSync(file.filepath, newFilePath);
+        let imagePath = "";
 
-        imagePath = `${slug}${ext}`;
+        if (file) {
+          const ext = path.extname(file.originalFilename);
+
+          if (![".png", ".jpg", ".jpeg"].includes(ext.toLowerCase())) {
+            return res
+              .status(400)
+              .json({ message: "Only PNG or JPEG allowed" });
+          }
+
+          const newFilePath = path.join(uploadDir, `${slug}${ext}`);
+
+          fs.copyFileSync(file.filepath, newFilePath);
+
+          // only store filename
+          imagePath = `${slug}${ext}`;
+        }
+
+        /* --------------------------
+           MARKDOWN GENERATION
+        -------------------------- */
+
+        const markdown = generateMarkdown({
+          title,
+          excerpt,
+          content,
+          image: imagePath,
+          date: new Date().toISOString().split("T")[0],
+        });
+
+        const postFilePath = path.join(
+          process.cwd(),
+          "posts",
+          `${slug}.md`
+        );
+
+        fs.writeFileSync(postFilePath, markdown);
+
+        return res.status(201).json({ message: "Post created!" });
+      } catch (error) {
+        console.error(error);
+
+        return res.status(500).json({
+          message: "Error creating post",
+          error: error.message,
+        });
       }
+    });
+  } catch (error) {
+    console.error(error);
 
-      /* --------------------------
-         MARKDOWN GENERATION
-      -------------------------- */
-
-      const markdown = generateMarkdown({
-        title,
-        excerpt,
-        content,
-        image: imagePath,
-        date: new Date().toISOString().split("T")[0],
-      });
-
-      const postFilePath = path.join(process.cwd(), "posts", `${slug}.md`);
-
-      fs.writeFileSync(postFilePath, markdown);
-
-      res.status(201).json({ message: "Post created!" });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({
-        message: "Error creating post",
-        error: error.message,
-      });
-    }
-  });
+    return res.status(401).json({
+      message: "Invalid or expired session",
+    });
+  }
 }

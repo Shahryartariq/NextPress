@@ -16,19 +16,27 @@ const CreatePost = () => {
   });
 
   const [preview, setPreview] = useState(null);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  /* --------------------------
+     INPUT CHANGE
+  -------------------------- */
 
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
 
-    /* FILE UPLOAD */
+    setErrorMsg("");
+    setSuccessMsg("");
+
     if (type === "file") {
       const file = files[0];
 
       if (!file) return;
 
-      // Validate type
       if (!["image/png", "image/jpeg"].includes(file.type)) {
-        alert("Only PNG or JPEG allowed");
+        setErrorMsg("Only PNG or JPEG images allowed");
         return;
       }
 
@@ -37,7 +45,6 @@ const CreatePost = () => {
         thumbnail: file,
       }));
 
-      // Preview
       setPreview(URL.createObjectURL(file));
       return;
     }
@@ -48,8 +55,16 @@ const CreatePost = () => {
     }));
   };
 
+  /* --------------------------
+     SUBMIT FORM
+  -------------------------- */
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    setLoading(true);
+    setErrorMsg("");
+    setSuccessMsg("");
 
     const submitData = new FormData();
 
@@ -65,80 +80,107 @@ const CreatePost = () => {
         body: submitData,
       });
 
-      if (!response.ok) throw new Error();
+      const data = await response.json();
 
-      alert("Post created successfully!");
-      router.push("/");
-    } catch {
-      alert("Failed to create post");
+      if (!response.ok) throw new Error(data.message);
+
+      setSuccessMsg("🎉 Post created successfully!");
+
+      setTimeout(() => {
+        router.push("/");
+      }, 1500);
+    } catch (error) {
+      setErrorMsg(error.message || "Something went wrong");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className={classes.container}>
-      <h1>Create Post</h1>
+      <div className={classes.card}>
+        <h1>Create New Post ✍️</h1>
 
-      <form onSubmit={handleSubmit} className={classes.form}>
-        {/* TITLE */}
-        <input
-          name="title"
-          placeholder="Title"
-          required
-          value={formData.title}
-          onChange={handleChange}
-        />
+        {errorMsg && <p className={classes.error}>{errorMsg}</p>}
+        {successMsg && <p className={classes.success}>{successMsg}</p>}
 
-        {/* DATE (READ ONLY DISPLAY) */}
-        <input type="date" value={formData.date} disabled />
+        <form onSubmit={handleSubmit} className={classes.form}>
+          {/* TITLE */}
+          <div className={classes.field}>
+            <label>Title</label>
+            <input
+              name="title"
+              required
+              value={formData.title}
+              onChange={handleChange}
+            />
+          </div>
 
-        {/* THUMBNAIL */}
-        <input
-          type="file"
-          name="thumbnail"
-          accept="image/png, image/jpeg"
-          required
-          onChange={handleChange}
-        />
+          {/* DATE */}
+          <div className={classes.field}>
+            <label>Date</label>
+            <input type="date" value={formData.date} disabled />
+          </div>
 
-        {/* Preview */}
-        {preview && (
-          <img
-            src={preview}
-            alt="Preview"
-            className={classes.preview}
-          />
-        )}
+          {/* THUMBNAIL */}
+          <div className={classes.field}>
+            <label>Thumbnail</label>
+            <input
+              type="file"
+              name="thumbnail"
+              accept="image/png, image/jpeg"
+              required
+              onChange={handleChange}
+            />
+          </div>
 
-        {/* EXCERPT */}
-        <input
-          name="excerpt"
-          placeholder="Excerpt"
-          value={formData.excerpt}
-          onChange={handleChange}
-        />
+          {/* IMAGE PREVIEW */}
+          {preview && (
+            <img
+              src={preview}
+              alt="Preview"
+              className={classes.preview}
+            />
+          )}
 
-        {/* FEATURED */}
-        <label className={classes.checkbox}>
-          Featured Post
-          <input
-            type="checkbox"
-            name="isFeatured"
-            checked={formData.isFeatured}
-            onChange={handleChange}
-          />
-        </label>
+          {/* EXCERPT */}
+          <div className={classes.field}>
+            <label>Excerpt</label>
+            <input
+              name="excerpt"
+              value={formData.excerpt}
+              onChange={handleChange}
+            />
+          </div>
 
-        {/* CONTENT */}
-        <textarea
-          name="content"
-          placeholder="Write markdown content..."
-          rows="10"
-          value={formData.content}
-          onChange={handleChange}
-        />
+          {/* FEATURED */}
+          <div className={classes.checkbox}>
+            <input
+              type="checkbox"
+              name="isFeatured"
+              checked={formData.isFeatured}
+              onChange={handleChange}
+            />
+            <label>Featured Post</label>
+          </div>
 
-        <button type="submit">Create Post</button>
-      </form>
+          {/* CONTENT */}
+          <div className={classes.field}>
+            <label>Content</label>
+            <textarea
+              rows="10"
+              name="content"
+              value={formData.content}
+              onChange={handleChange}
+              placeholder="Write markdown content..."
+            />
+          </div>
+
+          <button disabled={loading}>
+            {loading ? "Creating..." : "Create Post"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 };
