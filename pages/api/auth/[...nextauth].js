@@ -36,6 +36,8 @@ export const authOptions = {
         return {
           id: user.id,
           email: user.email,
+          isAdmin: user.isAdmin,
+          status: user.status,   
         };
       },
     }),
